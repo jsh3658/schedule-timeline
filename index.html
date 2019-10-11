@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> Schedule TimeLine </title>
+    <link rel="stylesheet" href="css/stylesheets/init.css">
+    <link rel="stylesheet" href="css/stylesheets/schedule.css">
+    <link rel="stylesheet" href="css/stylesheets/vue-datepicker.min.css">
+    <script src="js/vue.min.js"></script>
+    <script src="js/vue-datepicker.min.js"></script>
+    <script src="js/moment.min.js"></script>
+    <script src="js/axios.min.js"></script>
+</head>
+<body>
+<div id="wrap">
+    <h1>{{ title.toUpperCase() }}</h1>
+    <div class="select-area">
+        <ul>
+            <li>
+                <p class="tit"><img src="./img/timer.png" class="timer"> {{ time.select.title }}</p>
+                <select @change="onChange(time.select)" v-model="time.select.selected">
+                    <option disabled :value="time.select.selected">{{ time.select.selected }}</option>
+                    <option v-for="(t, j) in time.select.options" :key="j" :value="t" >{{ t }}</option>
+                </select>
+            </li>
+        </ul>
+    </div>
+
+    <div class="datepicker">
+        <p class="today-date" id="datepicker-trigger">{{ date.dateOne }}</p>
+        <airbnb-style-datepicker
+                :trigger-element-id="'datepicker-trigger'"
+                :fullscreen-mobile="false"
+                :date-one="date.dateOne"
+                :months-to-show=2
+                :show-month-year-select='true'
+                @date-one-selected="dateOneSelected"
+                :mode="'single'"
+                :end-date="date.today"
+                :offset-x="'50%'"
+                :offset-y="-90"
+        ></airbnb-style-datepicker>
+    </div>
+    <div class="timeline">
+        <table>
+            <thead ref="thead" :style="{ left: style.left.table + 'px' }">
+                <tr>
+                    <th><p>Title \ Time(UTC) </p></th>
+                    <th v-for="(t, i) in timeStep" :key="i"><p>{{ makeTime(t) }} <span v-if="(time.index - 1) === i"></span></p></th>
+                </tr>
+            </thead>
+            <tbody @scroll="tableScroll" ref="tbody" @mousemove="mouseMove">
+                <tr v-for="(cnt, i) in contents" :key="i" v-if="schedule[i].date.length !== 0">
+                    <td :style="{ left: -style.left.table + 'px'}"><p :style="{ color: schedule[i].background[0] }">{{ cnt.title }}</p></td>
+                    <td v-for="(count, j) in timeStep" :key="j">
+                        <p>
+                            <span class="time-spend" v-if="findCell(i, j)" :style="{ left: findCell(i, j, 'left') + 'px' , width: findCell(i, j, 'width') + 'px', background: findCell(i, j, 'background') }">
+                                <em>{{ cnt.content }}</em>
+                            </span>
+                        </p>
+                    </td>
+                </tr>
+                <tr class="line" :style="{ left : style.left.line + 'px' , height: style.height.line + 'px' }">
+                    <td class="tooltip" :style="{ top : style.top.tooltip + 'px'}">{{ date.dateOne }} {{ tooltipTimeZone }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <footer id="footer">
+        <p class="address">FOOTER</p>
+    </footer>
+</div>
+
+<script type="text/javascript">
+    const datepickerOptions = {
+        sundayFirst: true,
+        daysShort: ['월', '화', '수', '목', '금', '토', '일'],
+    };
+    Vue.use(window.AirbnbStyleDatepicker, datepickerOptions);
+
+    new Vue({
+        el: '#wrap',
+        data() {
+            return {
+                title: 'TITLE',
+                date: {
+                    today: new Date(),
+                    dateOne: moment(new Date()).format('YYYY-MM-DD'),
+                },
+                schedule: [],
+                contents: [
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀1',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T01:00:00Z',
+                                to: '2019-10-11T01:40:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                    {
+                        title: '타이틀2',
+                        content: '스케줄 내용',
+                        scheduleDate: [
+                            {
+                                from:  '2019-10-11T00:56:00Z',
+                                to: '2019-10-11T01:13:00Z'
+                            },
+                            {
+                                from: '2019-10-11T02:00:00Z',
+                                to: '2019-10-11T02:23:00Z'
+                            },
+                        ]
+                    },
+                ],
+                time: {
+                    list: [],
+                    start:0, //시작 시간
+                    end:24, // 끝 시간,
+                    step: 30, // 분,
+                    select: {
+                        title : '시간 간격',
+                        options : ['10분', '20분', '30분', '1시간', '2시간', '3시간'],
+                        selected: '30분'
+                    }
+                },
+                style: {
+                    top: {
+                        tooltip: 297
+                    },
+                    left: {
+                        table : 0,
+                        line: 0
+                    }, 
+                    width: {
+                        total: 0,
+                        cell: 0,
+                        firstCell: 0
+                    },
+                    height: {
+                        line: 0
+                    }
+                }
+            }
+        },
+        computed:{
+            timeStep() {
+                this.time.list = [];
+
+                let index = 0;
+                let Interval = this.time.step * 60;
+                let startSeconds = this.time.start * 3600;
+                let endSeconds = this.time.end * 3600;
+
+                do {
+                    this.time.list.push(startSeconds);
+                    index++;
+
+                    startSeconds += Interval;
+                } while (startSeconds < endSeconds);
+
+                this.style.width.total = this.style.width.cell * index + this.style.width.firstCell;
+                this.scheduleDraw;
+
+                return this.time.list;
+            },
+            scheduleDraw() {
+                let today = moment(this.date.dateOne).format('YYYYMMDD');
+                let background = ['#6bd9c4', '#a5d0f1', '#8eb1dd', '#ddbcff', '#fdc2d7', '#fdc9ad', '#e99fa0'];
+                let colors = ['#fff'];
+
+                this.schedule = [];
+                this.contents.forEach((obj, index) => {
+                    let arr = {index: [], left: [], width: [], colors: [], background: [], date: [] };
+                    let randomColor = index % background.length;
+
+                    obj.scheduleDate.forEach(e => {
+                        let startDate = moment(e.from).utc().format('YYYYMMDD');
+                        let endDate = moment(e.to).utc().format('YYYYMMDD');
+                        let start = this.makeSeconds(moment(e.from).utc().format('HH:mm'));
+                        let end = this.makeSeconds(moment(e.to).utc().format('HH:mm'));
+                        let width = this.makeMinute(end - start) * (this.style.width.cell / this.time.step);
+
+                        switch(true) {
+                            // 오늘 날짜인 경우
+                            case (startDate === today && today === endDate) :
+                                this.time.list.some((s, index) => {
+                                    if(s > start) {
+                                        let left = this.makeMinute(start - this.time.list[index]) * (this.style.width.cell / this.time.step);
+
+                                        this.makeLine(arr, index, left, width, colors[randomColor], background[randomColor], e.from);
+
+                                        return true;
+                                    }
+                                });
+                                break;
+
+                            // 오늘 날짜를 포함하고 과거와 미래 날짜가 있을 경우
+                            case (startDate < today && today < endDate) :
+                                this.makeLine(arr, 0, 0, this.style.width.total - this.style.width.firstCell - 2, colors[randomColor], background[randomColor], e.from);
+                                break;
+
+                            // 과거 날짜부터 시작해서 오늘 날짜인 경우
+                            case (startDate < today && today === endDate) :
+                                width = this.makeMinute(end) * (this.style.width.cell / this.time.step);
+
+                                this.makeLine(arr, 0, 0, width, colors[randomColor], background[randomColor], e.from);
+                                break;
+
+                            // 오늘 날짜부터 시작해서 미래 날짜까지
+                            case (startDate === today && today < endDate) :
+                                this.time.list.some((s, index) => {
+                                    if(s > start) {
+                                        let left = this.makeMinute(start - this.time.list[index]) * (this.style.width.cell / this.time.step);
+                                        let positionLeft = (this.style.width.cell * index) + this.style.width.firstCell + left;
+                                        let width = this.style.width.total - positionLeft - 2;
+
+                                        this.makeLine(arr, index, left, width, colors[randomColor], background[randomColor], e.from);
+
+                                        return true;
+                                    }
+                                });
+                                break;
+
+                            // 오늘 날짜를 기준으로 전부 미래일때, 오늘 날짜를 기준으로 전부 과거일때 아무것도 안그림
+                        }
+                    });
+                    this.schedule.push(arr);
+                });
+            },
+            tooltipTimeZone() {
+                let initPosition = parseInt(this.style.left.line) - 230;
+                let minute = parseInt(initPosition * (this.time.step / this.style.width.cell));
+                let time = this.makeZero(parseInt(minute / 60)) + ':' + this.makeZero(minute % 60);
+
+                return time;
+            },
+        },
+        mounted() {
+            this.$nextTick(() => {
+                let tbody = this.$refs['tbody'];
+
+                // TODO: vue LifeCycle 때문에 ref를 못가고 옴.. 일단 정적인 Date 넣어서 해결
+                this.style.width.cell = 175; //this.$refs['cell-width'][0].offsetWidth;
+                this.style.width.firstCell = 230; //this.$refs['cell-width'][0].offsetLeft;
+                this.style.height.line = tbody.scrollHeight;
+
+                tbody.addEventListener('scroll', () => {
+                    this.style.top.tooltip = 297 + tbody.scrollTop;
+                });
+            });
+        },
+        methods: {
+            getCallAPI() {
+                let date = moment(this.date.dateOne).format('YYYY-MM-DDTHH:MM:SS');
+                let URL  = 'URL' + date;
+
+                // API
+                // axios.get(URL)
+                //     .then(res => {
+                //         // this.contents = res.data;
+                //     })
+                //     .catch(err => {
+                //         console.error(err);
+                //     })
+            },
+            dateOneSelected(val) {
+                this.date.dateOne = val;
+
+                this.getCallAPI();
+            },
+            findCell(row, col, target) {
+                let index = this.schedule[row].index.indexOf(col);
+
+                if(index !== -1) {
+                    return target !== undefined ? this.schedule[row][target][index] : true
+                }
+            },
+            onChange(obj) {
+                let regex = /[0-9]+/g;
+                let time = obj.selected.match(regex)[0];
+
+                obj.selected.indexOf('시간') !== -1 ? time *= 60 : time;
+
+                this.time.step = time;
+                this.$refs['tbody'].scrollLeft = 0;
+            },
+            tableScroll(){
+                this.style.left.table = -this.$refs['tbody'].scrollLeft;
+            },
+            mouseMove() {
+                this.style.left.line = this.$refs['tbody'].scrollLeft + event.clientX;
+            },
+            makeLine(...args) {
+                const [line, index, left, width, color, background, start] = args;
+
+                line.index.push(index);
+                line.left.push(left);
+                line.width.push(width);
+                line.colors.push(color);
+                line.background.push(background);
+                line.date.push(start);
+            },
+            makeZero(num) {
+                return num < 10 ? '0' + num : num;
+            },
+            makeSeconds(t) {
+                let [h, m] = t.split(':');
+
+                return h * 3600 + m * 60;
+            },
+            makeMinute(s) {
+                let m = s / 60;
+
+                return m;
+            },
+            makeTime(s) {
+                let h = parseInt(s / 3600);
+                let m = parseInt((s % 3600) / 60);
+
+                return this.makeZero(h) + ':' + this.makeZero(m);
+            }
+        }
+    });
+</script>
+</body>
+</html>
