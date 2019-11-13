@@ -1,4 +1,4 @@
-<h1>schedule-timeline</h1>
+<h1>Schedule-Timeline</h1>
 
 
 <span style="margin:0 2px"><img src="https://img.shields.io/badge/framework-vue-brightgreen.svg" ></span>
