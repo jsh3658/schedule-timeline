@@ -488,8 +488,9 @@
                     let randomColor = index % background.length;
 
                     obj.scheduleDate.forEach(e => {
-                        let startDate = moment(e.from).utc().format('YYYYMMDD');
-                        let endDate = moment(e.to).utc().format('YYYYMMDD');
+                        // 항상 오늘 날짜로 나오도록 잠시 변경
+                        let startDate = moment(this.date.dateOne).format('YYYYMMDD');
+                        let endDate = moment(this.date.dateOne).format('YYYYMMDD');
                         let start = this.makeSeconds(moment(e.from).utc().format('HH:mm'));
                         let end = this.makeSeconds(moment(e.to).utc().format('HH:mm'));
                         let width = this.makeMinute(end - start) * (this.style.width.cell / this.time.step);
